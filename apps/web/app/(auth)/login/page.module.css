@@ -1,0 +1,25 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.link {
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.linkText {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.linkText:hover {
+  text-decoration: underline;
+}

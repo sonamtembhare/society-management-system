@@ -1,0 +1,31 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  padding: 24px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 768px) {
+  .main {
+    margin-left: 0;
+  }
+}
