@@ -7,10 +7,17 @@ import * as residentModel from "../models/resident.model";
 import * as settingsService from "./settings.service";
 import { AppError } from "../middleware/error.middleware";
 
-const razorpay = new Razorpay({
-  key_id: env.RAZORPAY_KEY_ID,
-  key_secret: env.RAZORPAY_KEY_SECRET,
-});
+let razorpay: Razorpay | null = null;
+
+const getRazorpay = () => {
+  if (!razorpay && env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET) {
+    razorpay = new Razorpay({
+      key_id: env.RAZORPAY_KEY_ID,
+      key_secret: env.RAZORPAY_KEY_SECRET,
+    });
+  }
+  return razorpay;
+};
 
 export const createOrder = async (billId: number, userId: number) => {
   const bill = await maintenanceModel.findById(billId);
@@ -31,10 +38,15 @@ export const createOrder = async (billId: number, userId: number) => {
     throw new AppError("This bill is already fully paid", 400);
   }
 
+  const instance = getRazorpay();
+  if (!instance) {
+    throw new AppError("Payment gateway not configured", 503);
+  }
+
   const amountInPaise = Math.round(bill.remaining_amount * 100);
   const appSettings = await settingsService.getAppSettings();
 
-  const order = await razorpay.orders.create({
+  const order = await instance.orders.create({
     amount: amountInPaise,
     currency: appSettings.currency,
     receipt: `bill_${billId}_flat_${bill.flat_id}`,
