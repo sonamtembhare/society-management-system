@@ -1,3 +1,9 @@
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 export interface Setting {
   id: number;
   key: string;
