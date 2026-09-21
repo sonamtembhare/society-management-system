@@ -9,9 +9,14 @@ export interface VisitorRow {
   purpose: string | null;
   vehicle_number: string | null;
   status: string;
+  visitor_type: string;
+  expected_date: string | null;
+  expected_time: string | null;
+  notes: string | null;
   check_in_time: Date | null;
   check_out_time: Date | null;
   approved_by: number | null;
+  created_by: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -42,13 +47,35 @@ export const findByResidentId = async (residentId: number): Promise<VisitorRow[]
   return rows as VisitorRow[];
 };
 
+export const findTodayVisitors = async (): Promise<VisitorRow[]> => {
+  const { rows } = await pool.query(
+    `SELECT * FROM visitors 
+     WHERE (expected_date = CURRENT_DATE OR DATE(check_in_time) = CURRENT_DATE OR DATE(created_at) = CURRENT_DATE)
+     ORDER BY created_at DESC`
+  );
+  return rows as VisitorRow[];
+};
+
+export const countByStatus = async (): Promise<Record<string, number>> => {
+  const { rows } = await pool.query(
+    `SELECT status, COUNT(*)::int as count FROM visitors 
+     WHERE DATE(created_at) = CURRENT_DATE OR DATE(check_in_time) = CURRENT_DATE
+     GROUP BY status`
+  );
+  const counts: Record<string, number> = { EXPECTED: 0, CHECKED_IN: 0, CHECKED_OUT: 0, CANCELLED: 0, PENDING: 0, APPROVED: 0, REJECTED: 0 };
+  for (const row of rows) {
+    counts[row.status] = row.count;
+  }
+  return counts;
+};
+
 export const create = async (
   data: Omit<VisitorRow, "id" | "created_at" | "updated_at" | "check_in_time" | "check_out_time" | "approved_by">
 ): Promise<VisitorRow> => {
   const { rows } = await pool.query(
-    `INSERT INTO visitors (resident_id, flat_id, visitor_name, visitor_phone, purpose, vehicle_number, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-    [data.resident_id, data.flat_id, data.visitor_name, data.visitor_phone, data.purpose, data.vehicle_number, data.status]
+    `INSERT INTO visitors (resident_id, flat_id, visitor_name, visitor_phone, purpose, vehicle_number, status, visitor_type, expected_date, expected_time, notes, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+    [data.resident_id, data.flat_id, data.visitor_name, data.visitor_phone, data.purpose, data.vehicle_number, data.status, data.visitor_type, data.expected_date, data.expected_time, data.notes, data.created_by]
   );
   return rows[0] as VisitorRow;
 };

@@ -9,6 +9,7 @@ export interface User {
   name: string;
   email: string;
   role: "ADMIN" | "RESIDENT" | "SECURITY";
+  phone?: string | null;
   created_at: string;
   updated_at: string;
 }

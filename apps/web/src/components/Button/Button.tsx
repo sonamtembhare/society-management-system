@@ -18,6 +18,7 @@ export default function Button({
 }: ButtonProps) {
   return (
     <button
+      suppressHydrationWarning
       className={`${styles.button} ${styles[variant]} ${className || ""}`}
       disabled={disabled || loading}
       {...props}

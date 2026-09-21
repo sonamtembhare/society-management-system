@@ -17,6 +17,7 @@ import noticeRoutes from "./routes/notice.routes";
 import visitorRoutes from "./routes/visitor.routes";
 import vehicleRoutes from "./routes/vehicle.routes";
 import eventRoutes from "./routes/event.routes";
+import settingsRoutes from "./routes/settings.routes";
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ app.use("/api/notices", noticeRoutes);
 app.use("/api/visitors", visitorRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/settings", settingsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

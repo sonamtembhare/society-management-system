@@ -15,6 +15,32 @@ export const getAll = async (
   }
 };
 
+export const getTodayVisitors = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const visitors = await visitorService.getTodayVisitors();
+    sendSuccess(res, 200, "Today's visitors retrieved", visitors);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const stats = await visitorService.getStats();
+    sendSuccess(res, 200, "Visitor stats retrieved", stats);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getById = async (
   req: Request,
   res: Response,
@@ -22,7 +48,7 @@ export const getById = async (
 ): Promise<void> => {
   try {
     const id = Number(req.params["id"]);
-    const visitor = await visitorService.getById(id);
+    const visitor = await visitorService.getById(id, req.user!.id, req.user!.role);
     sendSuccess(res, 200, "Visitor retrieved", visitor);
   } catch (error) {
     next(error);
@@ -35,8 +61,22 @@ export const create = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const visitor = await visitorService.create(req.body);
+    const visitor = await visitorService.create(req.body, req.user!.id, req.user!.role);
     sendSuccess(res, 201, "Visitor created", visitor);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const cancel = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = Number(req.params["id"]);
+    const visitor = await visitorService.cancel(id, req.user!.id);
+    sendSuccess(res, 200, "Visitor cancelled", visitor);
   } catch (error) {
     next(error);
   }

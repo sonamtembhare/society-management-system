@@ -6,6 +6,7 @@ export interface UserRow {
   email: string;
   password_hash: string;
   role: string;
+  phone: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -26,7 +27,11 @@ export const findById = async (
   id: number
 ): Promise<SafeUser | null> => {
   const { rows } = await pool.query(
-    "SELECT id, name, email, role, created_at, updated_at FROM users WHERE id = $1",
+    `SELECT u.id, u.name, u.email, u.role, u.created_at, u.updated_at,
+            COALESCE(u.phone, r.phone) AS phone
+     FROM users u
+     LEFT JOIN residents r ON r.user_id = u.id
+     WHERE u.id = $1`,
     [id]
   );
   return (rows[0] as SafeUser) ?? null;

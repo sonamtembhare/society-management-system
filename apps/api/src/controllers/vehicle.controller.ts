@@ -64,7 +64,35 @@ export const remove = async (
   try {
     const id = Number(req.params["id"]);
     await vehicleService.remove(id, req.user!.id, req.user!.role);
-    sendSuccess(res, 200, "Vehicle deleted");
+    sendSuccess(res, 200, "Vehicle deactivated");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const search = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const query = (req.query.q as string) || "";
+    const vehicles = await vehicleService.search(query, req.user!.id, req.user!.role);
+    sendSuccess(res, 200, "Vehicles found", vehicles);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deactivate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = Number(req.params["id"]);
+    await vehicleService.deactivate(id, req.user!.id, req.user!.role);
+    sendSuccess(res, 200, "Vehicle deactivated");
   } catch (error) {
     next(error);
   }

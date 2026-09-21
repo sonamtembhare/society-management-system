@@ -9,9 +9,12 @@ const router = Router();
 
 router.use(authenticate);
 
+router.get("/today", authorize("SECURITY", "ADMIN"), visitorController.getTodayVisitors);
+router.get("/stats", authorize("ADMIN"), visitorController.getStats);
 router.get("/", visitorController.getAll);
 router.get("/:id", visitorController.getById);
-router.post("/", authorize("ADMIN", "RESIDENT"), validate(createVisitorSchema), visitorController.create);
+router.post("/", authorize("RESIDENT", "SECURITY"), validate(createVisitorSchema), visitorController.create);
+router.patch("/:id/cancel", authorize("RESIDENT"), visitorController.cancel);
 router.put("/:id", validate(updateVisitorSchema), visitorController.update);
 router.put("/:id/approve", authorize("ADMIN"), visitorController.approve);
 router.put("/:id/reject", authorize("ADMIN"), visitorController.reject);

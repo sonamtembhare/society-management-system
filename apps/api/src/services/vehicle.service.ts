@@ -4,14 +4,14 @@ import { AppError } from "../middleware/error.middleware";
 import { CreateVehicleInput, UpdateVehicleInput } from "../validators/vehicle.validator";
 
 export const getAll = async (userId: number, role: string) => {
-  if (role === "ADMIN") {
-    return vehicleModel.findAll();
+  if (role === "ADMIN" || role === "SECURITY") {
+    return vehicleModel.findAllWithDetails();
   }
   const resident = await residentModel.findByUserId(userId);
   if (!resident) {
-    throw new AppError("Resident profile not found", 404);
+    return [];
   }
-  return vehicleModel.findByResidentId(resident.id);
+  return vehicleModel.findByResidentIdWithDetails(resident.id);
 };
 
 export const getById = async (id: number, userId: number, role: string) => {
@@ -35,13 +35,21 @@ export const create = async (data: CreateVehicleInput, userId: number) => {
   if (!resident) {
     throw new AppError("Resident profile not found", 404);
   }
+
+  const existing = await vehicleModel.findByVehicleNumber(data.vehicle_number);
+  if (existing) {
+    throw new AppError("Vehicle number already registered", 409);
+  }
+
   return vehicleModel.create({
     resident_id: resident.id,
+    flat_id: resident.flat_id,
     vehicle_number: data.vehicle_number,
     vehicle_type: data.vehicle_type,
     brand: data.brand ?? null,
     model: data.model ?? null,
     color: data.color ?? null,
+    status: "ACTIVE",
   });
 };
 
@@ -55,6 +63,13 @@ export const update = async (id: number, data: UpdateVehicleInput, userId: numbe
     const resident = await residentModel.findByUserId(userId);
     if (!resident || resident.id !== existing.resident_id) {
       throw new AppError("Access denied", 403);
+    }
+  }
+
+  if (data.vehicle_number && data.vehicle_number !== existing.vehicle_number) {
+    const duplicate = await vehicleModel.findByVehicleNumber(data.vehicle_number);
+    if (duplicate) {
+      throw new AppError("Vehicle number already registered", 409);
     }
   }
 
@@ -81,5 +96,43 @@ export const remove = async (id: number, userId: number, role: string) => {
     }
   }
 
-  await vehicleModel.remove(id);
+  await vehicleModel.deactivate(id);
+};
+
+export const search = async (query: string, userId: number, role: string) => {
+  if (!query || query.trim().length === 0) {
+    return role === "RESIDENT"
+      ? await vehicleModel.findByResidentIdWithDetails(
+          (await residentModel.findByUserId(userId))?.id ?? 0
+        )
+      : await vehicleModel.findAllWithDetails();
+  }
+
+  if (role === "RESIDENT") {
+    const resident = await residentModel.findByUserId(userId);
+    if (!resident) return [];
+    return vehicleModel.searchByQueryForResident(query, resident.id);
+  }
+
+  return vehicleModel.searchByQuery(query);
+};
+
+export const deactivate = async (id: number, userId: number, role: string) => {
+  const existing = await vehicleModel.findById(id);
+  if (!existing) {
+    throw new AppError("Vehicle not found", 404);
+  }
+
+  if (role === "RESIDENT") {
+    const resident = await residentModel.findByUserId(userId);
+    if (!resident || resident.id !== existing.resident_id) {
+      throw new AppError("Access denied", 403);
+    }
+  }
+
+  if (existing.status === "INACTIVE") {
+    throw new AppError("Vehicle is already inactive", 400);
+  }
+
+  return vehicleModel.deactivate(id);
 };

@@ -1,5 +1,7 @@
 import * as residentModel from "../models/resident.model";
 import * as maintenanceModel from "../models/maintenance.model";
+import * as flatModel from "../models/flat.model";
+import * as settingsService from "./settings.service";
 import { AppError } from "../middleware/error.middleware";
 import { CreateResidentInput, UpdateResidentInput } from "../validators/resident.validator";
 
@@ -52,17 +54,31 @@ export const create = async (data: CreateResidentInput) => {
   });
 
   const now = new Date();
-  const billingPeriod = now.toLocaleString("default", { month: "short", year: "numeric" });
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + 30);
+  const appSettings = await settingsService.getAppSettings();
+  const billingMonth = now.getMonth() + 1;
+  const billingYear = now.getFullYear();
+  const dueDate = new Date(now.getFullYear(), now.getMonth(), appSettings.dueDay);
+  if (dueDate <= now) {
+    dueDate.setMonth(dueDate.getMonth() + 1);
+  }
+
+  const flat = await flatModel.findById(data.flat_id);
+  const maintenanceAmount = appSettings.rates[flat?.type ?? ""] ?? 0;
+
+  const lateFee = now > dueDate ? appSettings.lateFee : 0;
 
   await maintenanceModel.create({
     flat_id: data.flat_id,
-    amount: 2500,
-    billing_period: billingPeriod,
-    description: "Monthly maintenance charges",
+    resident_id: resident.id,
+    billing_month: billingMonth,
+    billing_year: billingYear,
+    maintenance_amount: maintenanceAmount,
+    additional_charges: 0,
+    late_fee: lateFee,
+    total_amount: maintenanceAmount + lateFee,
     due_date: dueDate,
-    status: "PENDING",
+    status: "UNPAID",
+    description: "Monthly maintenance charges",
   });
 
   return resident;

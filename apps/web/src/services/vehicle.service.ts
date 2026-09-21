@@ -24,3 +24,14 @@ export const updateVehicle = async (id: number, data: UpdateVehicle): Promise<Ve
 export const deleteVehicle = async (id: number): Promise<void> => {
   await api.delete(`/vehicles/${id}`);
 };
+
+export const searchVehicles = async (query: string): Promise<Vehicle[]> => {
+  const response = await api.get<ApiResponse<Vehicle[]>>("/vehicles/search", {
+    params: { q: query },
+  });
+  return response.data.data || [];
+};
+
+export const deactivateVehicle = async (id: number): Promise<void> => {
+  await api.patch(`/vehicles/${id}/deactivate`);
+};

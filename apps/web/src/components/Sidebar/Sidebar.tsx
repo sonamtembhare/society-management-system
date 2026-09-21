@@ -22,6 +22,7 @@ const adminMenu = [
   { label: "Visitors", href: "/visitors", icon: "🚶" },
   { label: "Vehicles", href: "/vehicles", icon: "🚗" },
   { label: "Events", href: "/events", icon: "📅" },
+  { label: "Settings", href: "/settings", icon: "⚙️" },
 ];
 
 const residentMenu = [

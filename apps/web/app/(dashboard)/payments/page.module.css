@@ -15,17 +15,71 @@
   font-weight: 700;
 }
 
-.form {
+.filters {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
 }
 
-.formActions {
+.filterGroup {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 8px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filterLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.filterInput {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  background: var(--color-surface);
+  min-width: 120px;
+}
+
+.filterInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badgePaid {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.badgePending {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.badgeFailed {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.badgeOnline {
+  background: var(--color-info-light);
+  color: var(--color-info);
+}
+
+.badgeOffline {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
 }
 
 .actions {
@@ -33,31 +87,26 @@
   gap: 8px;
 }
 
-.field {
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.detailItem {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
-.label {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.select {
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  background: var(--color-surface);
-}
-
-.select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.error {
+.detailLabel {
   font-size: 12px;
-  color: var(--color-danger);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.detailValue {
+  font-size: 14px;
+  font-weight: 500;
 }

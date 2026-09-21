@@ -21,6 +21,12 @@
   gap: 16px;
 }
 
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 .formActions {
   display: flex;
   justify-content: flex-end;
@@ -31,4 +37,246 @@
 .actions {
   display: flex;
   gap: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.select {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background: var(--color-surface);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.fileInput {
+  padding: 8px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--color-bg);
+}
+
+.fileInput:hover {
+  border-color: var(--color-primary);
+}
+
+.uploading {
+  font-size: 12px;
+  color: var(--color-info);
+}
+
+.imageGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.imageThumb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.imageThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.removeMedia {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-danger);
+  color: white;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.videoPreview {
+  margin-top: 8px;
+  position: relative;
+  display: inline-block;
+}
+
+.videoPreview video {
+  max-width: 320px;
+  max-height: 180px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badgePending {
+  background: var(--color-warning-light, #fff3cd);
+  color: var(--color-warning, #e6a817);
+}
+
+.badgeInProgress {
+  background: var(--color-info-light, #d1ecf1);
+  color: var(--color-info, #0c5460);
+}
+
+.badgeResolved {
+  background: var(--color-success-light, #d4edda);
+  color: var(--color-success, #155724);
+}
+
+.badgeRejected {
+  background: var(--color-danger-light, #f8d7da);
+  color: var(--color-danger, #721c24);
+}
+
+.badgeLow {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badgeNormal {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.badgeHigh {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.badgeUrgent {
+  background: #fce4ec;
+  color: #c62828;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.detailValue {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.detailFull {
+  grid-column: 1 / -1;
+}
+
+.detailMedia {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailMediaLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.detailImages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detailImageThumb {
+  width: 120px;
+  height: 120px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.detailImageThumb:hover {
+  transform: scale(1.05);
+}
+
+.detailImageThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detailVideo {
+  max-width: 400px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.detailStatusActions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.detailStatusActions .field {
+  flex: 1;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-secondary);
 }

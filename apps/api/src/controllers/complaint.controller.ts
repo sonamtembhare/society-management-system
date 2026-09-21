@@ -15,6 +15,20 @@ export const getAll = async (
   }
 };
 
+export const getByResidentId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const residentId = Number(req.params["residentId"]);
+    const complaints = await complaintService.getByResidentId(residentId, req.user!.id, req.user!.role);
+    sendSuccess(res, 200, "Complaints retrieved", complaints);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getById = async (
   req: Request,
   res: Response,
@@ -37,6 +51,23 @@ export const create = async (
   try {
     const complaint = await complaintService.create(req.body, req.user!.id);
     sendSuccess(res, 201, "Complaint created", complaint);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const upload = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const file = req.file as Express.Multer.File | undefined;
+    if (!file) {
+      sendSuccess(res, 400, "No image file provided");
+      return;
+    }
+    sendSuccess(res, 200, "Image uploaded", { url: file.path });
   } catch (error) {
     next(error);
   }

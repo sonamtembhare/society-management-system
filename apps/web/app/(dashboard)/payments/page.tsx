@@ -1,49 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "react-toastify";
-import { createPaymentSchema, CreatePaymentInput } from "@/src/validators/payment.validator";
-import { getPayments, createPayment, updatePayment } from "@/src/services/payment.service";
-import { getMaintenance } from "@/src/services/maintenance.service";
-import { getResidents } from "@/src/services/resident.service";
+import { getPayments, getPaymentById, downloadReceipt } from "@/src/services/payment.service";
 import { Payment } from "@/src/types/payment";
-import { Maintenance } from "@/src/types/maintenance";
-import { Resident } from "@/src/types/resident";
 import DataTable from "@/src/components/DataTable/DataTable";
+import Loader from "@/src/components/Loader/Loader";
+import tableStyles from "@/src/components/DataTable/DataTable.module.css";
 import Button from "@/src/components/Button/Button";
-import Input from "@/src/components/Input/Input";
 import Modal from "@/src/components/Modal/Modal";
 import styles from "./page.module.css";
 
-const statusColors: Record<string, string> = {
-  PENDING: "var(--color-warning)",
-  PAID: "var(--color-success)",
-  FAILED: "var(--color-danger)",
-};
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [maintenance, setMaintenance] = useState<Maintenance[]>([]);
-  const [residents, setResidents] = useState<Resident[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Payment | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [detailModal, setDetailModal] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CreatePaymentInput>({
-    resolver: zodResolver(createPaymentSchema),
-  });
+  const [filterMethod, setFilterMethod] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [searchFlat, setSearchFlat] = useState("");
 
   const fetchData = async () => {
     try {
-      const [p, m, r] = await Promise.all([getPayments(), getMaintenance(), getResidents()]);
+      const p = await getPayments();
       setPayments(p);
-      setMaintenance(m);
-      setResidents(r);
     } catch {
-      toast.error("Failed to load data");
+      // silently handle
     } finally {
       setLoading(false);
     }
@@ -51,54 +39,66 @@ export default function PaymentsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const openCreate = () => {
-    setEditing(null);
-    reset({ maintenance_id: 0, resident_id: 0, amount: 0, payment_method: "", transaction_id: "" });
-    setModalOpen(true);
-  };
+  const filtered = useMemo(() => {
+    return payments.filter((p) => {
+      if (filterMethod && p.payment_method !== filterMethod) return false;
+      if (filterStatus && p.status !== filterStatus) return false;
+      if (searchFlat && !(p.flat_number || "").toLowerCase().includes(searchFlat.toLowerCase())) return false;
+      return true;
+    });
+  }, [payments, filterMethod, filterStatus, searchFlat]);
 
-  const openEdit = (p: Payment) => {
-    setEditing(p);
-    reset({ maintenance_id: p.maintenance_id, resident_id: p.resident_id, amount: p.amount, payment_method: p.payment_method || "", transaction_id: p.transaction_id || "" });
-    setModalOpen(true);
-  };
-
-  const onSubmit = async (data: CreatePaymentInput) => {
-    setSubmitting(true);
+  const openDetail = async (p: Payment) => {
     try {
-      if (editing) {
-        await updatePayment(editing.id, { status: "PAID", payment_method: data.payment_method, transaction_id: data.transaction_id });
-        toast.success("Payment updated");
-      } else {
-        await createPayment(data);
-        toast.success("Payment created");
-      }
-      setModalOpen(false);
-      fetchData();
-    } catch (error: unknown) {
-      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Operation failed";
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
+      const full = await getPaymentById(p.id);
+      setSelectedPayment(full);
+    } catch {
+      setSelectedPayment(p);
+    }
+    setDetailModal(true);
+  };
+
+  const handleDownloadReceipt = async (paymentId: number) => {
+    try {
+      await downloadReceipt(paymentId);
+      toast.success("Receipt downloaded");
+    } catch {
+      toast.error("Failed to download receipt");
     }
   };
 
   const columns = [
-    { key: "amount", label: "Amount", render: (p: Payment) => `₹${p.amount}` },
-    { key: "payment_method", label: "Method" },
-    { key: "transaction_id", label: "Transaction ID" },
+    { key: "id", label: "Payment ID", render: (p: Payment) => `#${p.id}` },
+    { key: "flat_number", label: "Flat", render: (p: Payment) => p.flat_number || "-" },
+    { key: "resident_name", label: "Resident", render: (p: Payment) => p.resident_name || "-" },
+    { key: "bill_id", label: "Bill ID", render: (p: Payment) => `#${p.bill_id}` },
+    { key: "paid_amount", label: "Amount", render: (p: Payment) => `₹${p.paid_amount}` },
+    {
+      key: "payment_method", label: "Method",
+      render: (p: Payment) => (
+        <span className={`${styles.badge} ${p.payment_method === "ONLINE" ? styles.badgeOnline : styles.badgeOffline}`}>
+          {p.payment_method}
+        </span>
+      ),
+    },
+    { key: "receipt_number", label: "Receipt/Ref", render: (p: Payment) => p.receipt_number || p.transaction_id || "-" },
     { key: "payment_date", label: "Date", render: (p: Payment) => new Date(p.payment_date).toLocaleDateString() },
     {
       key: "status", label: "Status",
       render: (p: Payment) => (
-        <span style={{ color: statusColors[p.status], fontWeight: 500 }}>{p.status}</span>
+        <span className={`${styles.badge} ${
+          p.status === "PAID" ? styles.badgePaid : p.status === "FAILED" ? styles.badgeFailed : styles.badgePending
+        }`}>{p.status}</span>
       ),
     },
     {
       key: "actions", label: "Actions",
       render: (p: Payment) => (
         <div className={styles.actions}>
-          <Button variant="ghost" onClick={() => openEdit(p)}>Edit</Button>
+          <Button variant="ghost" onClick={() => openDetail(p)}>View</Button>
+          {p.status === "PAID" && (
+            <Button variant="ghost" onClick={() => handleDownloadReceipt(p.id)}>Receipt</Button>
+          )}
         </div>
       ),
     },
@@ -107,37 +107,129 @@ export default function PaymentsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Payments</h1>
-        <Button onClick={openCreate}>Add Payment</Button>
+        <h1 className={styles.title}>Payment History</h1>
       </div>
-      <DataTable columns={columns} data={payments} loading={loading} emptyMessage="No payments found" />
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Edit Payment" : "Create Payment"}>
-        <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-          <div className={styles.field}>
-            <label className={styles.label}>Maintenance Bill</label>
-            <select className={styles.select} {...register("maintenance_id", { valueAsNumber: true })}>
-              <option value={0}>Select bill</option>
-              {maintenance.map((m) => <option key={m.id} value={m.id}>Bill #{m.id} - ₹{m.amount}</option>)}
-            </select>
-            {errors.maintenance_id && <span className={styles.error}>{errors.maintenance_id.message}</span>}
+      <div className={styles.filters}>
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>Flat Number</span>
+          <input className={styles.filterInput} placeholder="Search flat..." value={searchFlat} onChange={(e) => setSearchFlat(e.target.value)} />
+        </div>
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>Payment Method</span>
+          <select className={styles.filterInput} value={filterMethod} onChange={(e) => setFilterMethod(e.target.value)}>
+            <option value="">All Methods</option>
+            <option value="ONLINE">Online</option>
+            <option value="OFFLINE">Offline</option>
+          </select>
+        </div>
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>Status</span>
+          <select className={styles.filterInput} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <option value="">All Status</option>
+            <option value="PAID">Paid</option>
+            <option value="PENDING">Pending</option>
+            <option value="FAILED">Failed</option>
+          </select>
+        </div>
+      </div>
+
+      {loading ? (
+        <Loader />
+      ) : filtered.length === 0 ? (
+        <div className={tableStyles.tableWrapper}>
+          <table className={tableStyles.table}>
+            <thead>
+              <tr>
+                {columns.map((col) => (
+                  <th key={col.key} className={tableStyles.th}>{col.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colSpan={columns.length} className={tableStyles.td} style={{ textAlign: "center", padding: "60px 20px", color: "var(--color-text-secondary)" }}>
+                  No payments found
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <DataTable columns={columns} data={filtered} loading={false} onRowClick={openDetail} />
+      )}
+
+      <Modal isOpen={detailModal} onClose={() => setDetailModal(false)} title="Payment Details">
+        {selectedPayment && (
+          <div className={styles.detailGrid}>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Payment ID</span>
+              <span className={styles.detailValue}>#{selectedPayment.id}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Status</span>
+              <span className={`${styles.badge} ${
+                selectedPayment.status === "PAID" ? styles.badgePaid : selectedPayment.status === "FAILED" ? styles.badgeFailed : styles.badgePending
+              }`}>{selectedPayment.status}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Bill ID</span>
+              <span className={styles.detailValue}>#{selectedPayment.bill_id}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Flat</span>
+              <span className={styles.detailValue}>{selectedPayment.flat_number || "-"}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Resident</span>
+              <span className={styles.detailValue}>{selectedPayment.resident_name || "-"}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Billing Period</span>
+              <span className={styles.detailValue}>
+                {selectedPayment.billing_month && selectedPayment.billing_year
+                  ? `${monthNames[selectedPayment.billing_month - 1]} ${selectedPayment.billing_year}`
+                  : "-"}
+              </span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Paid Amount</span>
+              <span className={styles.detailValue}>₹{selectedPayment.paid_amount}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Bill Amount</span>
+              <span className={styles.detailValue}>₹{selectedPayment.total_amount || "-"}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Payment Method</span>
+              <span className={`${styles.badge} ${selectedPayment.payment_method === "ONLINE" ? styles.badgeOnline : styles.badgeOffline}`}>
+                {selectedPayment.payment_method}
+              </span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Payment Date</span>
+              <span className={styles.detailValue}>{new Date(selectedPayment.payment_date).toLocaleString()}</span>
+            </div>
+            {selectedPayment.transaction_id && (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Transaction ID</span>
+                <span className={styles.detailValue}>{selectedPayment.transaction_id}</span>
+              </div>
+            )}
+            {selectedPayment.receipt_number && (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Receipt Number</span>
+                <span className={styles.detailValue}>{selectedPayment.receipt_number}</span>
+              </div>
+            )}
+            {selectedPayment.note && (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Note</span>
+                <span className={styles.detailValue}>{selectedPayment.note}</span>
+              </div>
+            )}
           </div>
-          <div className={styles.field}>
-            <label className={styles.label}>Resident</label>
-            <select className={styles.select} {...register("resident_id", { valueAsNumber: true })}>
-              <option value={0}>Select resident</option>
-              {residents.map((r) => <option key={r.id} value={r.id}>Resident #{r.id}</option>)}
-            </select>
-            {errors.resident_id && <span className={styles.error}>{errors.resident_id.message}</span>}
-          </div>
-          <Input label="Amount" type="number" placeholder="Amount" error={errors.amount?.message} {...register("amount", { valueAsNumber: true })} />
-          <Input label="Payment Method" placeholder="e.g. UPI, Cash" {...register("payment_method")} />
-          <Input label="Transaction ID" placeholder="Transaction ID" {...register("transaction_id")} />
-          <div className={styles.formActions}>
-            <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" loading={submitting}>{editing ? "Update" : "Create"}</Button>
-          </div>
-        </form>
+        )}
       </Modal>
     </div>
   );

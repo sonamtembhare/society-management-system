@@ -27,7 +27,9 @@ export const create = async (data: CreateNoticeInput, createdBy: number) => {
     title: data.title,
     content: data.content,
     priority: data.priority ?? "NORMAL",
+    notice_type: data.notice_type ?? "GENERAL",
     created_by: createdBy,
+    expiry_date: data.expiry_date ? new Date(data.expiry_date) : null,
   });
 };
 
@@ -40,7 +42,9 @@ export const update = async (id: number, data: UpdateNoticeInput) => {
   if (data.title !== undefined) updateData["title"] = data.title;
   if (data.content !== undefined) updateData["content"] = data.content;
   if (data.priority !== undefined) updateData["priority"] = data.priority;
+  if (data.notice_type !== undefined) updateData["notice_type"] = data.notice_type;
   if (data.is_active !== undefined) updateData["is_active"] = data.is_active;
+  if (data.expiry_date !== undefined) updateData["expiry_date"] = data.expiry_date ? new Date(data.expiry_date) : null;
   return noticeModel.update(id, updateData);
 };
 

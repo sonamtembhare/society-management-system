@@ -7,6 +7,9 @@ export interface Resident {
   moving_date: string | null;
   created_at: string;
   updated_at: string;
+  user_name?: string;
+  user_email?: string;
+  flat_number?: string;
 }
 
 export interface ResidentDetail extends Resident {
@@ -15,6 +18,15 @@ export interface ResidentDetail extends Resident {
   flat_number: string;
   block: string | null;
   society_name: string;
+  vehicles?: {
+    id: number;
+    vehicle_number: string;
+    vehicle_type: string;
+    brand: string | null;
+    model: string | null;
+    color: string | null;
+    status: string;
+  }[];
 }
 
 export interface CreateResident {

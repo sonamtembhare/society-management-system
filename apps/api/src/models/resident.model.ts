@@ -11,9 +11,45 @@ export interface ResidentRow {
   updated_at: Date;
 }
 
-export const findAll = async (): Promise<ResidentRow[]> => {
-  const { rows } = await pool.query("SELECT * FROM residents ORDER BY created_at DESC");
-  return rows as ResidentRow[];
+export interface VehicleInfo {
+  id: number;
+  vehicle_number: string;
+  vehicle_type: string;
+  brand: string | null;
+  model: string | null;
+  color: string | null;
+  status: string;
+}
+
+export interface ResidentWithUser extends ResidentRow {
+  user_name: string;
+  user_email: string;
+  flat_number: string;
+  vehicles: VehicleInfo[];
+}
+
+export const findVehiclesByResidentId = async (residentId: number): Promise<VehicleInfo[]> => {
+  const { rows } = await pool.query(
+    "SELECT id, vehicle_number, vehicle_type, brand, model, color, status FROM vehicles WHERE resident_id = $1 AND status = 'ACTIVE' ORDER BY created_at DESC",
+    [residentId]
+  );
+  return rows as VehicleInfo[];
+};
+
+export const findAll = async (): Promise<ResidentWithUser[]> => {
+  const { rows } = await pool.query(
+    `SELECT r.*, u.name AS user_name, u.email AS user_email, f.flat_number
+     FROM residents r
+     JOIN users u ON r.user_id = u.id
+     JOIN flats f ON r.flat_id = f.id
+     ORDER BY r.created_at DESC`
+  );
+
+  for (const row of rows) {
+    row.vehicles = await findVehiclesByResidentId(row.id);
+  }
+
+  return rows as ResidentWithUser[];
 };
 
 export const findById = async (id: number): Promise<ResidentRow | null> => {
@@ -41,6 +77,11 @@ export const findDetailsById = async (id: number) => {
      WHERE r.id = $1`,
     [id]
   );
+
+  if (rows[0]) {
+    rows[0].vehicles = await findVehiclesByResidentId(id);
+  }
+
   return rows[0] ?? null;
 };
 

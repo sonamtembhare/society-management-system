@@ -18,6 +18,7 @@ export default function Navbar({ user, onMenuClick, onLogout }: NavbarProps) {
       <div className={styles.right}>
         <div className={styles.user}>
           <span className={styles.name}>{user?.name}</span>
+          {user?.phone && <span className={styles.phone}>{user.phone}</span>}
           <span className={styles.role}>{user?.role}</span>
         </div>
         <button className={styles.logout} onClick={onLogout}>

@@ -12,6 +12,7 @@ export default function Input({ label, error, className, ...props }: InputProps)
     <div className={styles.wrapper}>
       {label && <label className={styles.label}>{label}</label>}
       <input
+        suppressHydrationWarning
         className={`${styles.input} ${error ? styles.error : ""} ${className || ""}`}
         {...props}
       />

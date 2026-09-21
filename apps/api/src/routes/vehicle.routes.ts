@@ -8,10 +8,12 @@ const router = Router();
 
 router.use(authenticate);
 
+router.get("/search", vehicleController.search);
 router.get("/", vehicleController.getAll);
 router.get("/:id", vehicleController.getById);
 router.post("/", validate(createVehicleSchema), vehicleController.create);
 router.put("/:id", validate(updateVehicleSchema), vehicleController.update);
+router.patch("/:id/deactivate", vehicleController.deactivate);
 router.delete("/:id", vehicleController.remove);
 
 export default router;
