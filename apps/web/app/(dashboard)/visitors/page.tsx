@@ -43,7 +43,7 @@ export default function VisitorsPage() {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [todayVisitors, setTodayVisitors] = useState<Visitor[]>([]);
   const [stats, setStats] = useState<VisitorStats>({ EXPECTED: 0, CHECKED_IN: 0, CHECKED_OUT: 0, CANCELLED: 0, PENDING: 0, APPROVED: 0, REJECTED: 0 });
-  const [lightResidents, setLightResidents] = useState<{ id: number; user_name: string; flat_id: number }[]>([]);
+  const [lightResidents, setLightResidents] = useState<{ id: number; user_name: string; flat_id: number; flat_number: string }[]>([]);
   const [flatsMap, setFlatsMap] = useState<Map<number, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -52,9 +52,20 @@ export default function VisitorsPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterType, setFilterType] = useState("");
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateVisitorInput>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<CreateVisitorInput>({
     resolver: zodResolver(createVisitorSchema),
   });
+
+  const selectedResidentId = watch("resident_id");
+
+  useEffect(() => {
+    if (role === "SECURITY" && selectedResidentId && selectedResidentId > 0) {
+      const resident = lightResidents.find((r) => r.id === selectedResidentId);
+      if (resident) {
+        setValue("flat_id", resident.flat_id, { shouldValidate: true });
+      }
+    }
+  }, [selectedResidentId, lightResidents, role, setValue]);
 
   const fetchData = async () => {
     try {
@@ -78,12 +89,12 @@ export default function VisitorsPage() {
         setStats(results[idx++] as VisitorStats);
       }
       if (role === "SECURITY") {
-        const lightData = results[idx++] as { id: number; user_name: string; flat_id: number }[];
+        const lightData = results[idx++] as { id: number; user_name: string; flat_id: number; flat_number: string }[];
         setLightResidents(lightData);
         const flatMap = new Map<number, string>();
         for (const r of lightData) {
           if (!flatMap.has(r.flat_id)) {
-            flatMap.set(r.flat_id, `Flat #${r.flat_id}`);
+            flatMap.set(r.flat_id, r.flat_number);
           }
         }
         setFlatsMap(flatMap);
@@ -320,7 +331,7 @@ export default function VisitorsPage() {
               <label className={styles.label}>Resident</label>
               <select className={styles.select} {...register("resident_id", { valueAsNumber: true })}>
                 <option value={0}>Select resident</option>
-                {lightResidents.map((r) => <option key={r.id} value={r.id}>{r.user_name}</option>)}
+                {lightResidents.map((r) => <option key={r.id} value={r.id}>{r.user_name} ({r.flat_number})</option>)}
               </select>
               {errors.resident_id && <span className={styles.error}>{errors.resident_id.message}</span>}
             </div>

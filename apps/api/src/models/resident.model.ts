@@ -36,14 +36,15 @@ export const findVehiclesByResidentId = async (residentId: number): Promise<Vehi
   return rows as VehicleInfo[];
 };
 
-export const findAllLight = async (): Promise<{ id: number; user_name: string; flat_id: number }[]> => {
+export const findAllLight = async (): Promise<{ id: number; user_name: string; flat_id: number; flat_number: string }[]> => {
   const { rows } = await pool.query(
-    `SELECT r.id, u.name AS user_name, r.flat_id
+    `SELECT r.id, u.name AS user_name, r.flat_id, f.flat_number
      FROM residents r
      JOIN users u ON r.user_id = u.id
+     JOIN flats f ON r.flat_id = f.id
      ORDER BY u.name`
   );
-  return rows as { id: number; user_name: string; flat_id: number }[];
+  return rows as { id: number; user_name: string; flat_id: number; flat_number: string }[];
 };
 
 export const findAll = async (): Promise<ResidentWithUser[]> => {
