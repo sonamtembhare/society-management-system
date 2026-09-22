@@ -9,13 +9,9 @@ import { toast } from "react-toastify";
 import { createVisitorSchema, CreateVisitorInput } from "@/src/validators/visitor.validator";
 import {
   getVisitors, getTodayVisitors, getVisitorStats, createVisitor, cancelVisitor,
-  checkInVisitor, checkOutVisitor,
+  checkInVisitor, checkOutVisitor, getResidentsLight,
 } from "@/src/services/visitor.service";
-import { getResidents } from "@/src/services/resident.service";
-import { getFlats } from "@/src/services/flat.service";
 import { Visitor, VisitorStats } from "@/src/types/visitor";
-import { Resident } from "@/src/types/resident";
-import { Flat } from "@/src/types/flat";
 import DataTable from "@/src/components/DataTable/DataTable";
 import Button from "@/src/components/Button/Button";
 import Input from "@/src/components/Input/Input";
@@ -47,8 +43,8 @@ export default function VisitorsPage() {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [todayVisitors, setTodayVisitors] = useState<Visitor[]>([]);
   const [stats, setStats] = useState<VisitorStats>({ EXPECTED: 0, CHECKED_IN: 0, CHECKED_OUT: 0, CANCELLED: 0, PENDING: 0, APPROVED: 0, REJECTED: 0 });
-  const [residents, setResidents] = useState<Resident[]>([]);
-  const [flats, setFlats] = useState<Flat[]>([]);
+  const [lightResidents, setLightResidents] = useState<{ id: number; user_name: string; flat_id: number }[]>([]);
+  const [flatsMap, setFlatsMap] = useState<Map<number, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -70,7 +66,7 @@ export default function VisitorsPage() {
         promises.push(getVisitorStats());
       }
       if (role === "SECURITY") {
-        promises.push(getResidents(), getFlats());
+        promises.push(getResidentsLight());
       }
       const results = await Promise.all(promises);
       let idx = 0;
@@ -82,8 +78,15 @@ export default function VisitorsPage() {
         setStats(results[idx++] as VisitorStats);
       }
       if (role === "SECURITY") {
-        setResidents(results[idx++] as Resident[]);
-        setFlats(results[idx++] as Flat[]);
+        const lightData = results[idx++] as { id: number; user_name: string; flat_id: number }[];
+        setLightResidents(lightData);
+        const flatMap = new Map<number, string>();
+        for (const r of lightData) {
+          if (!flatMap.has(r.flat_id)) {
+            flatMap.set(r.flat_id, `Flat #${r.flat_id}`);
+          }
+        }
+        setFlatsMap(flatMap);
       }
     } catch {
       toast.error("Failed to load data");
@@ -317,7 +320,7 @@ export default function VisitorsPage() {
               <label className={styles.label}>Resident</label>
               <select className={styles.select} {...register("resident_id", { valueAsNumber: true })}>
                 <option value={0}>Select resident</option>
-                {residents.map((r) => <option key={r.id} value={r.id}>{r.user_name || `Resident #${r.id}`}</option>)}
+                {lightResidents.map((r) => <option key={r.id} value={r.id}>{r.user_name}</option>)}
               </select>
               {errors.resident_id && <span className={styles.error}>{errors.resident_id.message}</span>}
             </div>
@@ -325,7 +328,9 @@ export default function VisitorsPage() {
               <label className={styles.label}>Flat</label>
               <select className={styles.select} {...register("flat_id", { valueAsNumber: true })}>
                 <option value={0}>Select flat</option>
-                {flats.map((f) => <option key={f.id} value={f.id}>{f.flat_number}</option>)}
+                {Array.from(flatsMap.entries()).map(([id, label]) => (
+                  <option key={id} value={id}>{label}</option>
+                ))}
               </select>
               {errors.flat_id && <span className={styles.error}>{errors.flat_id.message}</span>}
             </div>

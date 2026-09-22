@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as visitorService from "../services/visitor.service";
+import * as residentModel from "../models/resident.model";
 import { sendSuccess } from "../utils/response";
 
 export const getAll = async (
@@ -147,6 +148,19 @@ export const update = async (
     const id = Number(req.params["id"]);
     const visitor = await visitorService.update(id, req.body, req.user!.role);
     sendSuccess(res, 200, "Visitor updated", visitor);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getResidentsLight = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const residents = await residentModel.findAllLight();
+    sendSuccess(res, 200, "Residents retrieved", residents);
   } catch (error) {
     next(error);
   }

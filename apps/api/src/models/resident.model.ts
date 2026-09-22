@@ -36,6 +36,16 @@ export const findVehiclesByResidentId = async (residentId: number): Promise<Vehi
   return rows as VehicleInfo[];
 };
 
+export const findAllLight = async (): Promise<{ id: number; user_name: string; flat_id: number }[]> => {
+  const { rows } = await pool.query(
+    `SELECT r.id, u.name AS user_name, r.flat_id
+     FROM residents r
+     JOIN users u ON r.user_id = u.id
+     ORDER BY u.name`
+  );
+  return rows as { id: number; user_name: string; flat_id: number }[];
+};
+
 export const findAll = async (): Promise<ResidentWithUser[]> => {
   const { rows } = await pool.query(
     `SELECT r.*, u.name AS user_name, u.email AS user_email, f.flat_number

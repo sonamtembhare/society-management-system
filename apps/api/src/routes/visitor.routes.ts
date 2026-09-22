@@ -11,6 +11,7 @@ router.use(authenticate);
 
 router.get("/today", authorize("SECURITY", "ADMIN"), visitorController.getTodayVisitors);
 router.get("/stats", authorize("ADMIN"), visitorController.getStats);
+router.get("/residents-light", authorize("SECURITY"), visitorController.getResidentsLight);
 router.get("/", visitorController.getAll);
 router.get("/:id", visitorController.getById);
 router.post("/", authorize("RESIDENT", "SECURITY"), validate(createVisitorSchema), visitorController.create);

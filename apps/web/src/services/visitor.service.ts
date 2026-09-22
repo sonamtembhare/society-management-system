@@ -55,3 +55,8 @@ export const checkOutVisitor = async (id: number): Promise<Visitor> => {
   const response = await api.put<ApiResponse<Visitor>>(`/visitors/${id}/check-out`);
   return response.data.data!;
 };
+
+export const getResidentsLight = async (): Promise<{ id: number; user_name: string; flat_id: number }[]> => {
+  const response = await api.get<ApiResponse<{ id: number; user_name: string; flat_id: number }[]>>("/visitors/residents-light");
+  return response.data.data || [];
+};
