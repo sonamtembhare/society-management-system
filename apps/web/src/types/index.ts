@@ -8,4 +8,4 @@ export type { Complaint, CreateComplaint, UpdateComplaint } from "./complaint";
 export type { Notice, CreateNotice, UpdateNotice } from "./notice";
 export type { Visitor, CreateVisitor, UpdateVisitor } from "./visitor";
 export type { Vehicle, CreateVehicle, UpdateVehicle } from "./vehicle";
-export type { Event, CreateEvent, UpdateEvent } from "./event";
+export type { Event, EventDetail, CreateEvent, UpdateEvent } from "./event";

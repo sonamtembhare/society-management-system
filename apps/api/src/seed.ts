@@ -232,6 +232,25 @@ const createTables = async (): Promise<void> => {
       )
     `);
 
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS facility VARCHAR(50) DEFAULT 'OTHER'`);
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS start_time TIME`);
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS end_time TIME`);
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS attendees INTEGER DEFAULT 0`);
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PENDING'`);
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS resident_id INTEGER REFERENCES residents(id)`);
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS notes TEXT`);
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS rejection_reason TEXT`);
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS approved_by INTEGER REFERENCES users(id)`);
+    await client.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP`);
+
+    await client.query(`ALTER TABLE events DROP CONSTRAINT IF EXISTS events_status_check`);
+    await client.query(`ALTER TABLE events ADD CONSTRAINT events_status_check CHECK (status IN ('PENDING','APPROVED','REJECTED','CANCELLED','COMPLETED'))`);
+    await client.query(`ALTER TABLE events DROP CONSTRAINT IF EXISTS events_facility_check`);
+    await client.query(`ALTER TABLE events ADD CONSTRAINT events_facility_check CHECK (facility IN ('GYM','SWIMMING_POOL','YOGA','SOCIETY_HALL','OTHER'))`);
+
+    await client.query(`UPDATE events SET start_time = event_date::time WHERE start_time IS NULL`);
+    await client.query(`UPDATE events SET end_time = COALESCE(end_date::time, '23:59'::time) WHERE end_time IS NULL`);
+
     await client.query("COMMIT");
     console.log("All tables created successfully");
   } catch (error) {

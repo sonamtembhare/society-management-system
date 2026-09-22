@@ -9,21 +9,43 @@ export interface Event {
   created_by: number;
   created_at: string;
   updated_at: string;
+  facility: string;
+  start_time: string | null;
+  end_time: string | null;
+  attendees: number;
+  status: string;
+  resident_id: number | null;
+  notes: string | null;
+  rejection_reason: string | null;
+  approved_by: number | null;
+  approved_at: string | null;
+}
+
+export interface EventDetail extends Event {
+  resident_name: string;
+  flat_number: string;
+  user_email: string;
+  user_phone: string | null;
 }
 
 export interface CreateEvent {
-  society_id: number;
   title: string;
-  description?: string;
+  facility: string;
   event_date: string;
-  end_date?: string;
-  location?: string;
+  start_time: string;
+  end_time: string;
+  attendees: number;
+  description?: string;
+  notes?: string;
 }
 
 export interface UpdateEvent {
   title?: string;
-  description?: string;
+  facility?: string;
   event_date?: string;
-  end_date?: string;
-  location?: string;
+  start_time?: string;
+  end_time?: string;
+  attendees?: number;
+  description?: string;
+  notes?: string;
 }
