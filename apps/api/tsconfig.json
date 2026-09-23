@@ -9,7 +9,9 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": false,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -18,5 +20,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force"
   },
-  "exclude": ["api"]
+  "exclude": [
+    "api"
+  ]
 }
