@@ -30,10 +30,27 @@ export const getById = async (id: number, userId: number, role: string) => {
   return vehicle;
 };
 
-export const create = async (data: CreateVehicleInput, userId: number) => {
-  const resident = await residentModel.findByUserId(userId);
-  if (!resident) {
-    throw new AppError("Resident profile not found", 404);
+export const create = async (data: CreateVehicleInput, userId: number, role: string) => {
+  let residentId: number;
+  let flatId: number | null;
+
+  if (role === "RESIDENT") {
+    const resident = await residentModel.findByUserId(userId);
+    if (!resident) {
+      throw new AppError("Resident profile not found", 404);
+    }
+    residentId = resident.id;
+    flatId = resident.flat_id;
+  } else {
+    if (!data.resident_id) {
+      throw new AppError("Owner resident is required", 400);
+    }
+    const resident = await residentModel.findById(data.resident_id);
+    if (!resident) {
+      throw new AppError("Resident not found", 404);
+    }
+    residentId = resident.id;
+    flatId = data.flat_id ?? resident.flat_id;
   }
 
   const existing = await vehicleModel.findByVehicleNumber(data.vehicle_number);
@@ -42,8 +59,8 @@ export const create = async (data: CreateVehicleInput, userId: number) => {
   }
 
   return vehicleModel.create({
-    resident_id: resident.id,
-    flat_id: resident.flat_id,
+    resident_id: residentId,
+    flat_id: flatId,
     vehicle_number: data.vehicle_number,
     vehicle_type: data.vehicle_type,
     brand: data.brand ?? null,
@@ -115,6 +132,22 @@ export const search = async (query: string, userId: number, role: string) => {
   }
 
   return vehicleModel.searchByQuery(query);
+};
+
+export const recordEntry = async (id: number) => {
+  const existing = await vehicleModel.findById(id);
+  if (!existing) {
+    throw new AppError("Vehicle not found", 404);
+  }
+  return vehicleModel.recordEntry(id);
+};
+
+export const recordExit = async (id: number) => {
+  const existing = await vehicleModel.findById(id);
+  if (!existing) {
+    throw new AppError("Vehicle not found", 404);
+  }
+  return vehicleModel.recordExit(id);
 };
 
 export const deactivate = async (id: number, userId: number, role: string) => {

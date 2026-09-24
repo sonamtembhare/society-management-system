@@ -10,6 +10,8 @@ export interface VehicleRow {
   model: string | null;
   color: string | null;
   status: string;
+  last_entry_at: Date | null;
+  last_exit_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -105,7 +107,7 @@ export const searchByQueryForResident = async (query: string, residentId: number
 };
 
 export const create = async (
-  data: Omit<VehicleRow, "id" | "created_at" | "updated_at">
+  data: Omit<VehicleRow, "id" | "created_at" | "updated_at" | "last_entry_at" | "last_exit_at">
 ): Promise<VehicleRow> => {
   const { rows } = await pool.query(
     `INSERT INTO vehicles (resident_id, flat_id, vehicle_number, vehicle_type, brand, model, color, status)
@@ -148,6 +150,22 @@ export const update = async (
   const { rows } = await pool.query(
     `UPDATE vehicles SET ${fields.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
     values
+  );
+  return (rows[0] as VehicleRow) ?? null;
+};
+
+export const recordEntry = async (id: number): Promise<VehicleRow | null> => {
+  const { rows } = await pool.query(
+    `UPDATE vehicles SET last_entry_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`,
+    [id]
+  );
+  return (rows[0] as VehicleRow) ?? null;
+};
+
+export const recordExit = async (id: number): Promise<VehicleRow | null> => {
+  const { rows } = await pool.query(
+    `UPDATE vehicles SET last_exit_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`,
+    [id]
   );
   return (rows[0] as VehicleRow) ?? null;
 };

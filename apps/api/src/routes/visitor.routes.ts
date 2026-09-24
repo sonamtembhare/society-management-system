@@ -14,7 +14,7 @@ router.get("/stats", authorize("ADMIN"), visitorController.getStats);
 router.get("/residents-light", authorize("SECURITY"), visitorController.getResidentsLight);
 router.get("/", visitorController.getAll);
 router.get("/:id", visitorController.getById);
-router.post("/", authorize("RESIDENT", "SECURITY"), validate(createVisitorSchema), visitorController.create);
+router.post("/", authorize("SECURITY"), validate(createVisitorSchema), visitorController.create);
 router.patch("/:id/cancel", authorize("RESIDENT"), visitorController.cancel);
 router.put("/:id", validate(updateVisitorSchema), visitorController.update);
 router.put("/:id/approve", authorize("ADMIN"), visitorController.approve);

@@ -8,6 +8,8 @@ export interface Vehicle {
   model: string | null;
   color: string | null;
   status: string;
+  last_entry_at?: string | null;
+  last_exit_at?: string | null;
   resident_name?: string;
   resident_mobile?: string | null;
   flat_number?: string | null;
@@ -21,6 +23,8 @@ export interface CreateVehicle {
   brand?: string;
   model?: string;
   color?: string;
+  resident_id?: number;
+  flat_id?: number;
 }
 
 export interface UpdateVehicle {

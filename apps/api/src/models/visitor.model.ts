@@ -21,6 +21,49 @@ export interface VisitorRow {
   updated_at: Date;
 }
 
+export interface VisitorWithDetails extends VisitorRow {
+  resident_name: string;
+  flat_number: string;
+  resident_phone: string | null;
+}
+
+const VISITOR_DETAILS_SELECT = `
+  v.*,
+  u.name AS resident_name,
+  f.flat_number,
+  r.phone AS resident_phone
+`;
+
+const VISITOR_DETAILS_JOINS = `
+  FROM visitors v
+  JOIN residents r ON v.resident_id = r.id
+  JOIN users u ON r.user_id = u.id
+  LEFT JOIN flats f ON v.flat_id = f.id
+`;
+
+export const findAllWithDetails = async (): Promise<VisitorWithDetails[]> => {
+  const { rows } = await pool.query(
+    `SELECT ${VISITOR_DETAILS_SELECT} ${VISITOR_DETAILS_JOINS} ORDER BY v.created_at DESC`
+  );
+  return rows as VisitorWithDetails[];
+};
+
+export const findByResidentIdWithDetails = async (residentId: number): Promise<VisitorWithDetails[]> => {
+  const { rows } = await pool.query(
+    `SELECT ${VISITOR_DETAILS_SELECT} ${VISITOR_DETAILS_JOINS} WHERE v.resident_id = $1 ORDER BY v.created_at DESC`,
+    [residentId]
+  );
+  return rows as VisitorWithDetails[];
+};
+
+export const findByIdWithDetails = async (id: number): Promise<VisitorWithDetails | null> => {
+  const { rows } = await pool.query(
+    `SELECT ${VISITOR_DETAILS_SELECT} ${VISITOR_DETAILS_JOINS} WHERE v.id = $1`,
+    [id]
+  );
+  return (rows[0] as VisitorWithDetails) ?? null;
+};
+
 export const findAll = async (): Promise<VisitorRow[]> => {
   const { rows } = await pool.query("SELECT * FROM visitors ORDER BY created_at DESC");
   return rows as VisitorRow[];

@@ -5,11 +5,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../components/auth/AuthContext";
 import { OffcanvasDrawer } from "../../components/layout/OffcanvasDrawer";
 import { Colors, Spacing, FontSize, BorderRadius } from "../../constants";
-import { RESIDENT_MENU } from "../../constants/menu";
+import { RESIDENT_MENU, RESIDENT_MENU_SECTIONS, SECURITY_MENU } from "../../constants/menu";
 
 export function SettingsScreen() {
   const { user, logout } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
+  const isResident = user?.role === "RESIDENT";
+  const isSecurity = user?.role === "SECURITY";
 
   const handleLogout = async () => {
     await logout();
@@ -63,7 +65,8 @@ export function SettingsScreen() {
 
       <OffcanvasDrawer
         visible={menuVisible}
-        items={RESIDENT_MENU}
+        sections={isResident ? RESIDENT_MENU_SECTIONS : undefined}
+        items={isResident ? undefined : isSecurity ? SECURITY_MENU : RESIDENT_MENU}
         onClose={() => setMenuVisible(false)}
         onSelect={gotoRoute}
         title="Menu"

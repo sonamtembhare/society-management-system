@@ -29,4 +29,12 @@ export const vehicleService = {
   async deactivateVehicle(id: number): Promise<ApiResponse<Vehicle>> {
     return api.patch(`/vehicles/${id}/deactivate`);
   },
+
+  async recordEntry(id: number): Promise<ApiResponse<Vehicle>> {
+    return api.patch(`/vehicles/${id}/entry`);
+  },
+
+  async recordExit(id: number): Promise<ApiResponse<Vehicle>> {
+    return api.patch(`/vehicles/${id}/exit`);
+  },
 };

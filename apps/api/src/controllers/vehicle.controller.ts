@@ -35,7 +35,7 @@ export const create = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const vehicle = await vehicleService.create(req.body, req.user!.id);
+    const vehicle = await vehicleService.create(req.body, req.user!.id, req.user!.role);
     sendSuccess(res, 201, "Vehicle created", vehicle);
   } catch (error) {
     next(error);
@@ -93,6 +93,34 @@ export const deactivate = async (
     const id = Number(req.params["id"]);
     await vehicleService.deactivate(id, req.user!.id, req.user!.role);
     sendSuccess(res, 200, "Vehicle deactivated");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const recordEntry = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = Number(req.params["id"]);
+    const vehicle = await vehicleService.recordEntry(id);
+    sendSuccess(res, 200, "Vehicle entry recorded", vehicle);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const recordExit = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = Number(req.params["id"]);
+    const vehicle = await vehicleService.recordExit(id);
+    sendSuccess(res, 200, "Vehicle exit recorded", vehicle);
   } catch (error) {
     next(error);
   }

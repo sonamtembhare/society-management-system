@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { eventService } from "../../services";
 import type { Event } from "../../types";
 import { Colors, Spacing, FontSize, BorderRadius, STATUS_COLORS } from "../../constants";
+import { useAuth } from "../../components/auth/AuthContext";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -39,6 +40,9 @@ function formatTime(time: string | null): string {
 }
 
 export function EventListScreen() {
+  const { user } = useAuth();
+  const isResident = user?.role === "RESIDENT";
+  const isAdmin = user?.role === "ADMIN";
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -130,6 +134,20 @@ export function EventListScreen() {
   };
 
   const renderActions = (event: Event) => {
+    if (isResident) {
+      const isOwn = user && event.created_by === user.id;
+      if (isOwn && (event.status === "PENDING" || event.status === "APPROVED")) {
+        return (
+          <View style={styles.actions}>
+            <Button title="Cancel Event" variant="secondary" onPress={() => handleCancel(event)} style={styles.actionButton} />
+          </View>
+        );
+      }
+      return <View style={styles.actions} />;
+    }
+    if (!isAdmin) {
+      return <View style={styles.actions} />;
+    }
     if (event.status === "PENDING") {
       return (
         <View style={styles.actions}>
@@ -169,7 +187,11 @@ export function EventListScreen() {
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Button title="Add Event" onPress={() => router.push("/event/create")} />
+            {isResident ? (
+              <Button title="Book Event" onPress={() => router.push("/event/create")} />
+            ) : isAdmin ? (
+              <Button title="Add Event" onPress={() => router.push("/event/create")} />
+            ) : null}
           </View>
         }
         contentContainerStyle={styles.listContent}

@@ -91,6 +91,28 @@ class ApiService {
   async delete<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
+
+  async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+    const headers = await this.getHeaders();
+    delete headers["Content-Type"];
+
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        await storage.clear();
+      }
+      throw new Error(data.message || "Something went wrong");
+    }
+
+    return data;
+  }
 }
 
 export const api = new ApiService();

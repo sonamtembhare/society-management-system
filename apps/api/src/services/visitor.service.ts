@@ -5,13 +5,13 @@ import { CreateVisitorInput, UpdateVisitorInput } from "../validators/visitor.va
 
 export const getAll = async (userId: number, role: string) => {
   if (role === "ADMIN" || role === "SECURITY") {
-    return visitorModel.findAll();
+    return visitorModel.findAllWithDetails();
   }
   const resident = await residentModel.findByUserId(userId);
   if (!resident) {
     return [];
   }
-  return visitorModel.findByResidentId(resident.id);
+  return visitorModel.findByResidentIdWithDetails(resident.id);
 };
 
 export const getTodayVisitors = async () => {
@@ -33,7 +33,7 @@ export const getById = async (id: number, userId: number, role: string) => {
       throw new AppError("Visitor not found", 404);
     }
   }
-  return visitor;
+  return visitorModel.findByIdWithDetails(id);
 };
 
 export const create = async (data: CreateVisitorInput, userId: number, role: string) => {
@@ -68,6 +68,11 @@ export const create = async (data: CreateVisitorInput, userId: number, role: str
     expected_time: data.expected_time ?? null,
     notes: data.notes ?? null,
     created_by: userId,
+  }).then((created) => {
+    if (role === "SECURITY") {
+      return visitorModel.update(created.id, { check_in_time: new Date() });
+    }
+    return created;
   });
 };
 

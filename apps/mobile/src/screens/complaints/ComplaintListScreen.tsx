@@ -8,6 +8,7 @@ import { Colors, Spacing, FontSize, BorderRadius, STATUS_COLORS } from "../../co
 import { useAuth } from "../../components/auth/AuthContext";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { formatDate } from "../../utils";
+import { Button } from "../../components/ui/Button";
 
 const PRIORITY_LABELS: Record<string, string> = {
   LOW: "Low",
@@ -60,6 +61,8 @@ export function ComplaintListScreen() {
 
   if (loading) return <LoadingSpinner />;
 
+  const isResident = user?.role === "RESIDENT";
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -95,6 +98,11 @@ export function ComplaintListScreen() {
         )}
         ListEmptyComponent={<Text style={styles.empty}>No complaints found</Text>}
       />
+      {isResident && (
+        <TouchableOpacity style={styles.fab} onPress={() => router.push("/complaint/create")} accessibilityLabel="Create new complaint">
+          <Ionicons name="add" size={28} color={Colors.white} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -120,4 +128,20 @@ const styles = StyleSheet.create({
   badgeText: { color: Colors.white, fontSize: FontSize.xs, fontWeight: "600" },
   deleteButton: { paddingLeft: Spacing.md, paddingVertical: Spacing.sm },
   empty: { textAlign: "center", color: Colors.textMuted, marginTop: Spacing.xxxl },
+  fab: {
+    position: "absolute",
+    bottom: Spacing.xl,
+    right: Spacing.xl,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
 });

@@ -17,6 +17,9 @@ export interface Visitor {
   created_by: number | null;
   created_at: string;
   updated_at: string;
+  resident_name?: string;
+  flat_number?: string;
+  resident_phone?: string | null;
 }
 
 export interface CreateVisitor {

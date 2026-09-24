@@ -213,6 +213,8 @@ const createTables = async (): Promise<void> => {
 
     await client.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS flat_id INTEGER REFERENCES flats(id) ON DELETE CASCADE`);
     await client.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'`);
+    await client.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS last_entry_at TIMESTAMP`);
+    await client.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS last_exit_at TIMESTAMP`);
     await client.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'vehicles_status_check') THEN ALTER TABLE vehicles ADD CONSTRAINT vehicles_status_check CHECK (status IN ('ACTIVE', 'INACTIVE')); END IF; END $$`);
     await client.query(`DO $$ DECLARE conname_var RECORD; BEGIN FOR conname_var IN SELECT conname FROM pg_constraint WHERE conrelid = 'vehicles'::regclass AND contype = 'c' AND pg_get_constraintdef(oid) LIKE '%vehicle_type%' LOOP EXECUTE 'ALTER TABLE vehicles DROP CONSTRAINT ' || conname_var.conname; END LOOP; END $$`);
     await client.query(`ALTER TABLE vehicles ADD CONSTRAINT vehicles_vehicle_type_check CHECK (vehicle_type IN ('CAR', 'BIKE', 'SCOOTER', 'EV', 'OTHER'))`);

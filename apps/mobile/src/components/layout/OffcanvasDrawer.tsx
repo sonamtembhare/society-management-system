@@ -14,19 +14,20 @@ import {
 import { usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Spacing, FontSize, BorderRadius, Shadow } from "../../constants";
-import type { MenuItem } from "../../constants/menu";
+import type { MenuItem, ResidentMenuSection } from "../../constants/menu";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.8, 320);
 
 type OffcanvasDrawerProps = {
   visible: boolean;
-  items: MenuItem[];
+  items?: MenuItem[];
+  sections?: ResidentMenuSection[];
   onClose: () => void;
   onSelect: (route: string) => void;
   title?: string;
 };
 
-export function OffcanvasDrawer({ visible, items, onClose, onSelect, title = "Menu" }: OffcanvasDrawerProps) {
+export function OffcanvasDrawer({ visible, items, sections, onClose, onSelect, title = "Menu" }: OffcanvasDrawerProps) {
   const pathname = usePathname();
   const translateX = useRef(new Animated.Value(DRAWER_WIDTH)).current;
 
@@ -48,6 +49,53 @@ export function OffcanvasDrawer({ visible, items, onClose, onSelect, title = "Me
     onSelect(route);
   };
 
+  const renderItem = (item: MenuItem) => {
+    const active = pathname === item.route;
+    return (
+      <TouchableOpacity key={item.name} style={styles.drawerItem} onPress={() => select(item.route)}>
+        <Ionicons name={item.icon} size={20} color={active ? Colors.primary : Colors.textSecondary} />
+        <Text style={[styles.drawerItemText, active && styles.drawerItemTextActive]}>{item.title}</Text>
+        {active && <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderList = () => {
+    if (sections) {
+      return (
+        <ScrollView contentContainerStyle={styles.drawerList}>
+          {sections.map((section) =>
+            section.kind === "group" ? (
+              <View key={section.title}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons name={section.icon} size={18} color={Colors.primary} />
+                  <Text style={styles.sectionTitle}>{section.title}</Text>
+                </View>
+                {section.items.map((item) => {
+                  const active = pathname === item.route;
+                  return (
+                    <TouchableOpacity key={item.name} style={[styles.drawerItem, styles.sectionItem]} onPress={() => select(item.route)}>
+                      <Ionicons name={item.icon} size={20} color={active ? Colors.primary : Colors.textSecondary} />
+                      <Text style={[styles.drawerItemText, active && styles.drawerItemTextActive]}>{item.title}</Text>
+                      {active && <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : (
+              renderItem({ name: section.name, title: section.title, icon: section.icon, route: section.route })
+            )
+          )}
+        </ScrollView>
+      );
+    }
+    return (
+      <ScrollView contentContainerStyle={styles.drawerList}>
+        {(items ?? []).map(renderItem)}
+      </ScrollView>
+    );
+  };
+
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={close}>
       <View style={styles.overlay}>
@@ -60,18 +108,7 @@ export function OffcanvasDrawer({ visible, items, onClose, onSelect, title = "Me
                 <Ionicons name="close" size={24} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            <ScrollView contentContainerStyle={styles.drawerList}>
-              {items.map((item) => {
-                const active = pathname === item.route;
-                return (
-                  <TouchableOpacity key={item.name} style={styles.drawerItem} onPress={() => select(item.route)}>
-                    <Ionicons name={item.icon} size={20} color={active ? Colors.primary : Colors.textSecondary} />
-                    <Text style={[styles.drawerItemText, active && styles.drawerItemTextActive]}>{item.title}</Text>
-                    {active && <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+            {renderList()}
           </SafeAreaView>
         </Animated.View>
       </View>
@@ -114,6 +151,22 @@ const styles = StyleSheet.create({
   },
   drawerList: {
     paddingVertical: Spacing.sm,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+  sectionTitle: {
+    fontSize: FontSize.md,
+    fontWeight: "bold",
+    color: Colors.primary,
+  },
+  sectionItem: {
+    paddingLeft: Spacing.xxl,
   },
   drawerItem: {
     flexDirection: "row",

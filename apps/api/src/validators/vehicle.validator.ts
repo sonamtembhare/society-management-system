@@ -6,6 +6,8 @@ export const createVehicleSchema = z.object({
   brand: z.string().max(50).optional(),
   model: z.string().max(50).optional(),
   color: z.string().max(30).optional(),
+  resident_id: z.coerce.number().optional(),
+  flat_id: z.coerce.number().optional(),
 });
 
 export const updateVehicleSchema = z.object({

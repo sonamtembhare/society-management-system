@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert, Image, Modal, TouchableOpacity, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Alert, Image, Modal, TouchableOpacity, Pressable, Dimensions } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -11,6 +11,8 @@ import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { Select } from "../../components/ui/Select";
 import { Button } from "../../components/ui/Button";
 import { formatDate } from "../../utils";
+import { PanGestureHandler, PinchGestureHandler } from "react-native-gesture-handler";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, interpolate, Extrapolate } from "react-native-reanimated";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "PENDING" },
@@ -32,13 +34,87 @@ function ComplaintVideo({ url }: { url: string | null }) {
   });
 
   return (
-    <VideoView
-      style={styles.video}
-      player={player}
-      contentFit="contain"
-      surfaceType="textureView"
-      fullscreenOptions={{ enable: true }}
-    />
+    <View style={styles.videoContainer}>
+      <VideoView
+        style={styles.video}
+        player={player}
+        contentFit="contain"
+        surfaceType="textureView"
+        fullscreenOptions={{ enable: true }}
+      />
+    </View>
+  );
+}
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+function FullscreenImage({ source, onClose }: { source: { uri: string }; onClose: () => void }) {
+  const scale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const lastScale = useSharedValue(1);
+  const lastTranslateX = useSharedValue(0);
+  const lastTranslateY = useSharedValue(0);
+
+  const onPinchStart = () => {
+    lastScale.value = scale.value;
+  };
+
+  const onPinchUpdate = (event: any) => {
+    scale.value = lastScale.value * event.scale;
+  };
+
+  const onPanStart = () => {
+    lastTranslateX.value = translateX.value;
+    lastTranslateY.value = translateY.value;
+  };
+
+  const onPanUpdate = (event: any) => {
+    translateX.value = lastTranslateX.value + event.translationX;
+    translateY.value = lastTranslateY.value + event.translationY;
+  };
+
+  const onDoubleTap = () => {
+    if (scale.value > 1) {
+      scale.value = withSpring(1);
+      translateX.value = withSpring(0);
+      translateY.value = withSpring(0);
+    } else {
+      scale.value = withSpring(3);
+    }
+  };
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const clampedScale = interpolate(scale.value, [0, 1, 10], [1, 1, 10], Extrapolate.CLAMP);
+    const maxTranslateX = (SCREEN_WIDTH * (clampedScale - 1)) / 2;
+    const maxTranslateY = (SCREEN_HEIGHT * (clampedScale - 1)) / 2;
+    const clampedTranslateX = interpolate(translateX.value, [-maxTranslateX, maxTranslateX], [-maxTranslateX, maxTranslateX], Extrapolate.CLAMP);
+    const clampedTranslateY = interpolate(translateY.value, [-maxTranslateY, maxTranslateY], [-maxTranslateY, maxTranslateY], Extrapolate.CLAMP);
+
+    return {
+      transform: [
+        { translateX: clampedTranslateX },
+        { translateY: clampedTranslateY },
+        { scale: clampedScale },
+      ],
+    };
+  }, [scale, translateX, translateY]);
+
+  return (
+    <Modal visible={true} transparent animationType="fade">
+      <Pressable style={styles.fullscreenBackdrop} onPress={onClose}>
+        <PanGestureHandler onGestureEvent={onPanUpdate} onHandlerStateChange={onPanStart}>
+          <PinchGestureHandler onGestureEvent={onPinchUpdate} onHandlerStateChange={onPinchStart}>
+            <Animated.View style={[styles.fullscreenImageContainer, animatedStyle]}>
+              <Image source={source} style={styles.fullscreenImage} resizeMode="contain" />
+            </Animated.View>
+          </PinchGestureHandler>
+        </PanGestureHandler>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose} hitSlop={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+          <Ionicons name="close" size={32} color={Colors.white} />
+        </TouchableOpacity>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -49,7 +125,6 @@ export function ComplaintDetailScreen({ id }: { id: number }) {
   const [complaint, setComplaint] = useState<Complaint | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const fetchComplaint = async () => {
     try {
@@ -59,6 +134,8 @@ export function ComplaintDetailScreen({ id }: { id: number }) {
       setLoading(false);
     }
   };
+
+  const [fullscreenImageSource, setFullscreenImageSource] = useState<{ uri: string } | null>(null);
 
   useEffect(() => {
     fetchComplaint();
@@ -141,7 +218,7 @@ export function ComplaintDetailScreen({ id }: { id: number }) {
           <Text style={styles.sectionTitle}>Photos ({images.length})</Text>
           <View style={styles.imageRow}>
             {images.map((url, idx) => (
-              <TouchableOpacity key={idx} onPress={() => setSelectedImage(url)}>
+              <TouchableOpacity key={idx} onPress={() => setFullscreenImageSource({ uri: url })}>
                 <Image source={{ uri: url }} style={styles.thumb} />
               </TouchableOpacity>
             ))}
@@ -169,14 +246,9 @@ export function ComplaintDetailScreen({ id }: { id: number }) {
         </View>
       )}
 
-      <Modal visible={!!selectedImage} transparent animationType="fade" onRequestClose={() => setSelectedImage(null)}>
-        <Pressable style={styles.fullscreenBackdrop} onPress={() => setSelectedImage(null)}>
-          {selectedImage && <Image source={{ uri: selectedImage }} style={styles.fullscreenImage} resizeMode="contain" />}
-          <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedImage(null)}>
-            <Ionicons name="close" size={28} color={Colors.white} />
-          </TouchableOpacity>
-        </Pressable>
-      </Modal>
+      {fullscreenImageSource && (
+        <FullscreenImage source={fullscreenImageSource} onClose={() => setFullscreenImageSource(null)} />
+      )}
     </ScrollView>
   );
 }
@@ -197,9 +269,20 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: FontSize.lg, fontWeight: "bold", color: Colors.text },
   imageRow: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm, marginTop: Spacing.sm },
   thumb: { width: 100, height: 100, borderRadius: BorderRadius.md },
-  video: { width: "100%", height: 220, backgroundColor: Colors.black, borderRadius: BorderRadius.md, marginTop: Spacing.sm },
-  fullscreenBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.9)", justifyContent: "center", alignItems: "center" },
-  fullscreenImage: { width: "100%", height: "100%" },
-  closeButton: { position: "absolute", top: Spacing.lg, right: Spacing.lg, padding: Spacing.sm },
+  videoContainer: { position: "relative", width: "100%", height: 220, backgroundColor: Colors.black, borderRadius: BorderRadius.md, marginTop: Spacing.sm },
+  video: { width: "100%", height: "100%", borderRadius: BorderRadius.md },
+  fullscreenButton: {
+    position: "absolute",
+    bottom: Spacing.md,
+    right: Spacing.md,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: BorderRadius.full,
+    padding: Spacing.sm,
+    zIndex: 10,
+  },
+  fullscreenBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.95)", justifyContent: "center", alignItems: "center" },
+  fullscreenImageContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  fullscreenImage: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT },
+  closeButton: { position: "absolute", top: Spacing.lg, right: Spacing.lg, padding: Spacing.sm, zIndex: 20 },
   empty: { textAlign: "center", color: Colors.textMuted, marginTop: Spacing.xxxl },
 });
