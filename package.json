@@ -19,7 +19,7 @@
   "devEngines": {
     "packageManager": {
       "name": "npm",
-      "version": "11.x"
+      "version": ">=10.9.8"
     }
   },
   "overrides": {
